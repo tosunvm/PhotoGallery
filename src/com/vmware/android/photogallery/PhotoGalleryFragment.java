@@ -1,6 +1,7 @@
 package com.vmware.android.photogallery;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.GridView;
 
 // http://stackoverflow.com/questions/5832287/what-goes-into-source-control
@@ -16,6 +18,7 @@ import android.widget.GridView;
 public class PhotoGalleryFragment extends Fragment {
 	private GridView mGridView;
 	private static final String TAG = "PhotoGalleryFragment";
+	private ArrayList<GalleryItem> mItems;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -34,15 +37,48 @@ public class PhotoGalleryFragment extends Fragment {
 				false);
 
 		mGridView = (GridView) v.findViewById(R.id.gridView);
-		
+		setupAdapter();
 		return v;
 	}
 	
-	private class FetchItemsTask extends AsyncTask<Void, Void, Void> {
+	void setupAdapter() {
+		if (getActivity() == null || mGridView == null)
+			return;
+		
+		if (mItems != null) {
+
+			//if (mGridView.getAdapter() == null) {
+				mGridView.setAdapter(new ArrayAdapter<GalleryItem>(
+						getActivity(), android.R.layout.simple_gallery_item, mItems));
+			/* } else {
+				// This makes sure newly added items to the data set get displayed.
+				ArrayAdapter<GalleryItem> gItemsAdapter = (ArrayAdapter<GalleryItem>) mGridView
+						.getAdapter();
+				gItemsAdapter.notifyDataSetChanged();
+			}
+			*/
+
+		} else {
+			mGridView.setAdapter(null);
+		}
+	}
+
+	
+	private class FetchItemsTask extends AsyncTask<Void, Void, ArrayList<GalleryItem>> {
 		@Override
-		protected Void doInBackground(Void... params) {
-			new FlickrFetchr().fetchItems(1);
-			return null;
+		protected ArrayList<GalleryItem> doInBackground(Void... params) {
+			return new FlickrFetchr().fetchItems(1);
+		}
+		@Override
+        protected void onPostExecute(ArrayList<GalleryItem> items) {
+            if (mItems != null){
+            	mItems.addAll(items);
+            }
+            else{
+            	mItems = items;
+            }
+            setupAdapter();
+            //fetched_page++;
 		}
 	}
 

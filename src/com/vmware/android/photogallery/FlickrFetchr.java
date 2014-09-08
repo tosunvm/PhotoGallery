@@ -26,6 +26,12 @@ public class FlickrFetchr {
     private static final String EXTRA_SMALL_URL = "url_s";
     private static final String XML_PHOTO = "photo";
 	
+	public void testConflict(int myInt){
+		int tempInt = 0;
+		tempInt = myInt;
+		Log.i(TAG, "Input integer is: " + tempInt);
+	}
+
 	byte[] getUrlBytes(String urlSpec) throws IOException {
 		URL url = new URL(urlSpec);
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();

@@ -26,7 +26,7 @@ public class FlickrFetchr {
     private static final String EXTRA_SMALL_URL = "url_s";
     private static final String XML_PHOTO = "photo";
 	
-	public void testConflict(int myInt){
+	public void testResolvedConflict(int myInt){
 		int tempInt = 0;
 		tempInt = myInt;
 		Log.i(TAG, "Input integer is: " + tempInt);

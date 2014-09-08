@@ -30,12 +30,12 @@ public class PhotoGalleryFragment extends Fragment {
 		new FetchItemsTask().execute();
 	}
 
-	public void testConflict(int myInt){
+	public void testConflict(int myResolvedInt){
 		int tempInt = 0;
-		tempInt = myInt;
-		Log.i(TAG, "Input integer is: " + tempInt);
+		tempInt = myResolvedInt;
+		Log.i(TAG, "Input integer: " + tempInt);
 	}
-	
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {

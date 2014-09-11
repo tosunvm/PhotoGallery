@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -24,14 +25,15 @@ public class PhotoGalleryFragment extends Fragment {
 	private ArrayList<GalleryItem> mItems;
 	ThumbnailDownloader<ImageView> mThumbnailThread;
 	
+	private int mPages;
+	private int mTotalCount = 0;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//mPages = 0;
+		mPages = 0;
 		setRetainInstance(true);
-		//new FetchItemsTask().execute(++mPages);
-		//new FetchItemsTask().execute(current_page);
-		new FetchItemsTask().execute();
+		new FetchItemsTask().execute(++mPages);
 		
 		mThumbnailThread = new ThumbnailDownloader<ImageView>(new Handler());
 	    mThumbnailThread.setListener(new ThumbnailDownloader.Listener<ImageView>() {
@@ -60,7 +62,6 @@ public class PhotoGalleryFragment extends Fragment {
 	    mThumbnailThread.clearQueue();
 	}
 
-
 	public void testConflict(int myResolvedInt){
 		int tempInt = 0;
 		tempInt = myResolvedInt;
@@ -74,6 +75,26 @@ public class PhotoGalleryFragment extends Fragment {
 				false);
 
 		mGridView = (GridView) v.findViewById(R.id.gridView);
+		mGridView.setOnScrollListener(new AbsListView.OnScrollListener() {
+			@Override
+			public void onScroll(AbsListView view, int firstVisibleItem,
+					int visibleItemCount, int totalItemCount) {
+				if ((visibleItemCount > 0)
+						&& ((firstVisibleItem + visibleItemCount) == totalItemCount)
+						&& (totalItemCount > mTotalCount)) {
+
+					mTotalCount = totalItemCount;
+					new FetchItemsTask().execute(++mPages);
+					Log.e(TAG, "Scrolled: current_page: " + mPages);
+				}
+			}
+
+			public void onScrollStateChanged(AbsListView view, int scrollState) {
+				// TODO Auto-generated method stub
+			}
+
+		});
+
 		setupAdapter();
 		return v;
 	}
@@ -84,16 +105,14 @@ public class PhotoGalleryFragment extends Fragment {
 		
 		if (mItems != null) {
 
-			//if (mGridView.getAdapter() == null) {
-			mGridView.setAdapter(new GalleryItemAdapter(mItems));
-			/* } else {
+			if (mGridView.getAdapter() == null) {
+				mGridView.setAdapter(new GalleryItemAdapter(mItems));
+			} else {
 				// This makes sure newly added items to the data set get displayed.
-				ArrayAdapter<GalleryItem> gItemsAdapter = (ArrayAdapter<GalleryItem>) mGridView
+				ArrayAdapter<GalleryItem> gItemsAdapter = (GalleryItemAdapter) mGridView
 						.getAdapter();
 				gItemsAdapter.notifyDataSetChanged();
 			}
-			*/
-
 		} else {
 			mGridView.setAdapter(null);
 		}
@@ -124,10 +143,10 @@ public class PhotoGalleryFragment extends Fragment {
 		}
 	}
 	
-	private class FetchItemsTask extends AsyncTask<Void, Void, ArrayList<GalleryItem>> {
+	private class FetchItemsTask extends AsyncTask<Integer, Void, ArrayList<GalleryItem>> {
 		@Override
-		protected ArrayList<GalleryItem> doInBackground(Void... params) {
-			return new FlickrFetchr().fetchItems(1);
+		protected ArrayList<GalleryItem> doInBackground(Integer... params) {
+			return new FlickrFetchr().fetchItems(params[0]);
 		}
 		@Override
         protected void onPostExecute(ArrayList<GalleryItem> items) {

@@ -66,6 +66,7 @@ public class PhotoGalleryFragment extends Fragment {
 		int tempInt = 0;
 		tempInt = myResolvedInt;
 		Log.i(TAG, "Input integer: " + tempInt);
+		Log.i(TAG, "Test if local ch27 will be able to push to remote chapter27 w/o forcing me to merge again: " + tempInt);
 	}
 
 	@Override

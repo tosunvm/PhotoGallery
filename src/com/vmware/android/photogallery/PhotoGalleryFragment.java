@@ -68,6 +68,7 @@ public class PhotoGalleryFragment extends Fragment {
 		Log.i(TAG, "Input integer: " + tempInt);
 		Log.i(TAG, "Test intermediate changes by tosunst: " + tempInt);
 		Log.i(TAG, "Test if local ch27 will be able to push to remote chapter27 w/o forcing me to merge again: " + tempInt);
+		Log.i(TAG, "Test one more change by tosunvm: " + tempInt);
 	}
 
 	@Override

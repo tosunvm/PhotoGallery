@@ -12,26 +12,32 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import android.app.Activity;
+import android.content.Context;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class FlickrFetchr {
-	private static final String TAG = "FlickrFetchr";
+	public static final String TAG = "FlickrFetchr";
+	public static final String PREF_SEARCH_QUERY = "searchQuery";
+	public static final String PREF_TOTAL_COUNT = "N/A";
+	public static final String PREF_LAST_RESULT_ID = "lastResultId";
+	
 	private static final String ENDPOINT = "https://api.flickr.com/services/rest/";
     private static final String API_KEY = "cc7bcb648f013d58d9b4929c71e592f8";
     private static final String METHOD_GET_RECENT = "flickr.photos.getRecent";
+    private static final String METHOD_SEARCH = "flickr.photos.search";
     private static final String PARAM_EXTRAS = "extras";
+    private static final String PARAM_TEXT = "text";
 
     private static final String PAGE = "page";
     private static final String EXTRA_SMALL_URL = "url_s";
     private static final String XML_PHOTO = "photo";
-	
-	public void testResolvedConflict(int myInt){
-		int tempInt = 0;
-		tempInt = myInt;
-		Log.i(TAG, "Input integer is: " + tempInt);
-	}
-
+    private static final String XML_PHOTOS = "photos";
+    
+    private Context mAppContext;
+    
 	byte[] getUrlBytes(String urlSpec) throws IOException {
 		URL url = new URL(urlSpec);
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -62,7 +68,7 @@ public class FlickrFetchr {
 	public String getUrl(String urlSpec) throws IOException {
 		return new String(getUrlBytes(urlSpec));
 	}
-	
+
 	void parseItems(ArrayList<GalleryItem> items, XmlPullParser parser)
 			throws XmlPullParserException, IOException {
 		int eventType = parser.next();
@@ -81,24 +87,53 @@ public class FlickrFetchr {
 				item.setUrl(smallUrl);
 				items.add(item);
 			}
+			else if (eventType == XmlPullParser.START_TAG
+					&& XML_PHOTOS.equals(parser.getName())) {
+				String totalResultCount = parser.getAttributeValue(null, "total");
+	        	PreferenceManager.getDefaultSharedPreferences(mAppContext)
+	        					 .edit()
+	        					 .putString(FlickrFetchr.PREF_TOTAL_COUNT, totalResultCount)
+	        					 .commit();
+			}
 
 			eventType = parser.next();
 		}
 	}
 
-	public ArrayList<GalleryItem> fetchItems(Integer page) {
+	public ArrayList<GalleryItem> fetchItems(Integer page, Context appContext) {
+		String url = Uri.parse(ENDPOINT).buildUpon()
+				.appendQueryParameter("method", METHOD_GET_RECENT)
+				.appendQueryParameter("api_key", API_KEY)
+				.appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
+				.appendQueryParameter(PAGE, page.toString())
+				.build().toString();
+		mAppContext = appContext;
+		return downloadGalleryItems(url);
+
+	}
+	
+	/*
+	 * I added activity here only for challenge 2. This is to be able to write total result count
+	 * into the preferences file so I can pass it back to the main thread for toast display.
+	 */
+	public ArrayList<GalleryItem> search(String query, Context appContext) {
+		String url = Uri.parse(ENDPOINT).buildUpon()
+				.appendQueryParameter("method", METHOD_SEARCH)
+				.appendQueryParameter("api_key", API_KEY)
+				.appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
+				.appendQueryParameter(PARAM_TEXT, query)
+				.build().toString();
+		mAppContext = appContext;
+		return downloadGalleryItems(url);
+	}
+	
+	public ArrayList<GalleryItem> downloadGalleryItems(String url) {
 		ArrayList<GalleryItem> items = new ArrayList<GalleryItem>();
 		try {
-			String url = Uri.parse(ENDPOINT).buildUpon()
-					.appendQueryParameter("method", METHOD_GET_RECENT)
-					.appendQueryParameter("api_key", API_KEY)
-					.appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
-					.appendQueryParameter(PAGE, page.toString())
-					.build().toString();
 			Log.i(TAG, "URL called: " + url);
 			String xmlString = getUrl(url);
-			longInfo("Received xml: " + xmlString);
-			
+			//Log.i(TAG, "Received xml: " + xmlString);
+			//longInfo("Received xml: " + xmlString);
 			XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 			XmlPullParser parser = factory.newPullParser();
 			parser.setInput(new StringReader(xmlString));
@@ -108,7 +143,7 @@ public class FlickrFetchr {
 		} catch (IOException ioe) {
 			Log.e(TAG, "Failed to fetch items", ioe);
 		} catch (XmlPullParserException xppe) {
-		Log.e(TAG, "Failed to parse items", xppe);
+			Log.e(TAG, "Failed to parse items", xppe);
 		}
 		return items;
 
